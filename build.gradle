@@ -1,0 +1,67 @@
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.gradle.publish:plugin-publish-plugin:0.9.2'
+    }
+}
+
+plugins {
+    id 'maven'
+    id 'maven-publish'
+    id 'net.saliman.cobertura' version '2.3.0'
+    id 'com.github.kt3k.coveralls' version '2.4.0'
+    id 'com.github.ksoichiro.console.reporter' version '0.3.4'
+}
+
+repositories {
+    mavenCentral()
+}
+
+apply plugin: 'idea'
+apply plugin: 'groovy'
+apply plugin: 'signing'
+apply plugin: 'com.gradle.plugin-publish'
+apply from: "${rootDir}/gradle/meta.gradle"
+apply from: "${rootDir}/gradle/release.gradle"
+
+task createClasspathManifest {
+    def outputDir = file("$buildDir/$name")
+
+    inputs.files sourceSets.main.runtimeClasspath
+    outputs.dir outputDir
+
+    doLast {
+        outputDir.mkdirs()
+        file("${outputDir}/plugin-classpath.txt").text = sourceSets.main.runtimeClasspath.join("\n")
+    }
+}
+
+dependencies {
+    compile gradleApi()
+    compile localGroovy()
+    testRuntime files(createClasspathManifest)
+    testCompile gradleTestKit()
+    testCompile('org.spockframework:spock-core:1.0-groovy-2.4') {
+        exclude module: 'groovy-all'
+    }
+}
+
+idea.module.excludeDirs += file('.repo')
+fileTree(dir: "samples").visit { details ->
+    if (details.name in ['.gradle', 'build']) {
+        idea.module.excludeDirs << details.file
+    }
+}
+
+check.dependsOn('cobertura')
+
+consoleReporter {
+    cobertura {
+        coverageTaskName 'generateCoberturaReport'
+    }
+}
