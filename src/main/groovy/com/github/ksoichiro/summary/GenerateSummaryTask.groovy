@@ -118,7 +118,7 @@ class GenerateSummaryTask extends DefaultTask {
                     def xml = it.reports.xml.destination
                     def cov = coverage(xml)
                     def classes = covClasses(cov)
-                    def htmlReportFile = p.file("${it.reports.xml.destination}/index.html")
+                    def htmlReportFile = p.file("${it.reports.html.destination}/index.html")
                     reportFile.text += """\
                         |<tr>
                         |  <td>${p.name}</td>
