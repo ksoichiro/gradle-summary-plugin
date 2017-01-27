@@ -19,7 +19,7 @@ class GenerateSummaryTask extends DefaultTask {
                 anyProjectHasJacocoPlugin()
             }
             extension = project.extensions."${SummaryExtension.NAME}"
-            reportFile = project.file("${project.buildDir}/reports/summary/index.html")
+            reportFile = extension.destination ?: project.file("${project.buildDir}/reports/summary/index.html")
             inputs.files jacocoReportFiles()
             outputs.file reportFile
         }
