@@ -11,31 +11,16 @@ class GenerateSummaryTask extends DefaultTask {
 
     GenerateSummaryTask() {
         project.afterEvaluate {
-            dependsOn project.rootProject.allprojects.tasks.flatten().findAll { it.class.simpleName.startsWith 'JacocoReport' }
-            if (!project.rootProject.tasks.flatten().any { it.name == 'check' }) {
-                project.tasks.create 'check'
-                project.gradle.projectsEvaluated {
-                    project.rootProject.subprojects.tasks.flatten().findAll { it.name.contains('check') }.each {
-                        project.rootProject.tasks.check.mustRunAfter it
-                    }
-                }
-                project.rootProject.check.dependsOn NAME
+            dependsOn allJacocoReportTasks()
+            if (!rootProjectHasCheckTask()) {
+                defineCheckTaskForRootProject()
             }
             onlyIf {
-                project.rootProject.allprojects.any { it.plugins.hasPlugin('jacoco') }
+                anyProjectHasJacocoPlugin()
             }
             extension = project.extensions."${SummaryExtension.NAME}"
             reportFile = project.file("${project.buildDir}/reports/summary/index.html")
-            def reports = []
-            project.rootProject.allprojects.findAll { it.plugins.hasPlugin('jacoco') }.each {
-                it.tasks.flatten().findAll { it.class.simpleName.startsWith 'JacocoReport' }.each {
-                    if (!it.reports.xml.enabled) {
-                        it.reports.xml.enabled = true
-                    }
-                    reports += it.reports.xml.destination
-                }
-            }
-            inputs.files reports
+            inputs.files jacocoReportFiles()
             outputs.file reportFile
         }
     }
@@ -91,34 +76,10 @@ class GenerateSummaryTask extends DefaultTask {
             |  <th>Coverage[%]</th>
             |</tr>
             |""".stripMargin().stripIndent()
-        def covClasses = { cov ->
-            if (80 <= cov) {
-                return "fine"
-            } else if (60 <= cov) {
-                return "warn"
-            } else {
-                return "bad"
-            }
-        }
-        def coverage = { file ->
-            def rootNode = new XmlParser(false, false).parseText(file.text.replaceAll("<!DOCTYPE[^>]*>", ""))
-            def cov = 0.0f
-            rootNode.counter.each { counter ->
-                try {
-                    if ('INSTRUCTION' == counter.@type) {
-                        def covered = Integer.valueOf(counter.@covered as String)
-                        def missed = Integer.valueOf(counter.@missed as String)
-                        cov = (100.0 * covered / (missed + covered)) as float
-                    }
-                } catch (ignore) {
-                }
-            }
-            cov
-        }
         project.rootProject.allprojects.each {
             it.findAll { it.plugins.hasPlugin('jacoco') }.each { Project p ->
                 it.tasks.flatten().findAll { it.class.simpleName.startsWith 'JacocoReport' }.each {
-                    def xml = it.reports.xml.destination
+                    File xml = it.reports.xml.destination
                     def cov = coverage(xml)
                     def classes = covClasses(cov)
                     def htmlReportFile = p.file("${it.reports.html.destination}/index.html")
@@ -139,5 +100,66 @@ class GenerateSummaryTask extends DefaultTask {
             |""".stripMargin().stripIndent()
         println "Summary:"
         println "${reportFile.canonicalPath}"
+    }
+
+    def allJacocoReportTasks() {
+        project.rootProject.allprojects.tasks.flatten().findAll { it.class.simpleName.startsWith 'JacocoReport' }
+    }
+
+    def rootProjectHasCheckTask() {
+        project.rootProject.tasks.flatten().any { it.name == 'check' }
+    }
+
+    def defineCheckTaskForRootProject() {
+        project.tasks.create 'check'
+        project.gradle.projectsEvaluated {
+            project.rootProject.subprojects.tasks.flatten().findAll { it.name.contains('check') }.each {
+                project.rootProject.tasks.check.mustRunAfter it
+            }
+        }
+        project.rootProject.check.dependsOn NAME
+    }
+
+    def anyProjectHasJacocoPlugin() {
+        project.rootProject.allprojects.any { it.plugins.hasPlugin('jacoco') }
+    }
+
+    def jacocoReportFiles() {
+        def reports = []
+        project.rootProject.allprojects.findAll { it.plugins.hasPlugin('jacoco') }.each {
+            it.tasks.flatten().findAll { it.class.simpleName.startsWith 'JacocoReport' }.each {
+                if (!it.reports.xml.enabled) {
+                    it.reports.xml.enabled = true
+                }
+                reports += it.reports.xml.destination
+            }
+        }
+        reports
+    }
+
+    static covClasses(float cov) {
+        if (80 <= cov) {
+            return "fine"
+        } else if (60 <= cov) {
+            return "warn"
+        } else {
+            return "bad"
+        }
+    }
+
+    static float coverage(File file) {
+        def rootNode = new XmlParser(false, false).parseText(file.text.replaceAll("<!DOCTYPE[^>]*>", ""))
+        def cov = 0.0f
+        rootNode.counter.each { counter ->
+            try {
+                if ('INSTRUCTION' == counter.@type) {
+                    def covered = Integer.valueOf(counter.@covered as String)
+                    def missed = Integer.valueOf(counter.@missed as String)
+                    cov = (100.0 * covered / (missed + covered)) as float
+                }
+            } catch (ignore) {
+            }
+        }
+        cov
     }
 }
