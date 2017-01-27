@@ -15,6 +15,9 @@ class GenerateSummaryTask extends DefaultTask {
             if (!rootProjectHasCheckTask()) {
                 defineCheckTaskForRootProject()
             }
+            if (!rootProjectHasCleanTask()) {
+                defineCleanTaskForRootProject()
+            }
             onlyIf {
                 anyProjectHasJacocoPlugin()
             }
@@ -118,6 +121,20 @@ class GenerateSummaryTask extends DefaultTask {
             }
         }
         project.rootProject.check.dependsOn NAME
+    }
+
+    def rootProjectHasCleanTask() {
+        project.rootProject.tasks.flatten().any { it.name == 'clean' }
+    }
+
+    def defineCleanTaskForRootProject() {
+        project.rootProject.tasks.create('clean') {
+            doLast {
+                if (reportFile?.exists()) {
+                    project.rootProject.delete(reportFile)
+                }
+            }
+        }
     }
 
     def anyProjectHasJacocoPlugin() {
