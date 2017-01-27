@@ -29,6 +29,9 @@ class GenerateSummaryTask extends DefaultTask {
             def reports = []
             project.rootProject.allprojects.findAll { it.plugins.hasPlugin('jacoco') }.each {
                 it.tasks.flatten().findAll { it.class.simpleName.startsWith 'JacocoReport' }.each {
+                    if (!it.reports.xml.enabled) {
+                        it.reports.xml.enabled = true
+                    }
                     reports += it.reports.xml.destination
                 }
             }
