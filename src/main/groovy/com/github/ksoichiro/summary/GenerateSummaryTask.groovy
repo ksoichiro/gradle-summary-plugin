@@ -30,10 +30,7 @@ class GenerateSummaryTask extends DefaultTask {
 
     @TaskAction
     void exec() {
-        def reportDir = reportFile.parentFile
-        if (!reportDir.exists()) {
-            project.mkdir(reportDir)
-        }
+        createReportDir()
         reportFile.text = """\
             |<html>
             |<head>
@@ -79,20 +76,18 @@ class GenerateSummaryTask extends DefaultTask {
             |  <th>Coverage[%]</th>
             |</tr>
             |""".stripMargin().stripIndent()
-        project.rootProject.allprojects.each {
-            it.findAll { it.plugins.hasPlugin('jacoco') }.each { Project p ->
-                it.tasks.flatten().findAll { it.class.simpleName.startsWith 'JacocoReport' }.each {
-                    File xml = it.reports.xml.destination
-                    def cov = coverage(xml)
-                    def classes = covClasses(cov)
-                    def htmlReportFile = p.file("${it.reports.html.destination}/index.html")
-                    reportFile.text += """\
-                        |<tr>
-                        |  <td>${p.name}</td>
-                        |  <td class="right"><a href="file://${htmlReportFile.canonicalPath}" class="${classes}">${sprintf('%3.2f', cov.round(2))}</a></td>
-                        |</tr>
-                        |""".stripMargin().stripIndent()
-                }
+        project.rootProject.allprojects.findAll { it.plugins.hasPlugin('jacoco') }.each { Project p ->
+            p.tasks.flatten().findAll { it.class.simpleName.startsWith 'JacocoReport' }.each {
+                File xml = it.reports.xml.destination
+                def cov = coverage(xml)
+                def classes = covClasses(cov)
+                def htmlReportFile = p.file("${it.reports.html.destination}/index.html")
+                reportFile.text += """\
+                    |<tr>
+                    |  <td>${p.name}</td>
+                    |  <td class="right"><a href="file://${htmlReportFile.canonicalPath}" class="${classes}">${sprintf('%3.2f', cov.round(2))}</a></td>
+                    |</tr>
+                    |""".stripMargin().stripIndent()
             }
         }
         reportFile.text += """\
@@ -103,6 +98,13 @@ class GenerateSummaryTask extends DefaultTask {
             |""".stripMargin().stripIndent()
         println "Summary:"
         println "${reportFile.canonicalPath}"
+    }
+
+    def createReportDir() {
+        def reportDir = reportFile.parentFile
+        if (!reportDir.exists()) {
+            project.mkdir(reportDir)
+        }
     }
 
     def allJacocoReportTasks() {
