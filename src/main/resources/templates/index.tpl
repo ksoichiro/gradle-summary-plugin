@@ -7,15 +7,21 @@ html {
         h3 'Summary'
         table {
             tr {
-                th 'Project'
-                th 'Coverage[%]'
+                summaryContent[0].each {
+                    th it.title
+                }
             }
-            summaryContent.each { summary ->
+            summaryContent.each { summaries ->
                 tr {
-                    td summary.name
-                    td(class: 'right') {
-                        a(href: "file://${summary.htmlReportFile.canonicalPath}", class: summary.cssClasses) {
-                            yield sprintf('%3.2f', summary.coverage.round(2))
+                    summaries.each { summary ->
+                        if (summary.hasLink()) {
+                            td(class: summary.rightAligned ? 'right' : '') {
+                                a(href: summary.link, class: summary.cssClasses, summary.content)
+                            }
+                        } else {
+                            td {
+                                yield summary.content
+                            }
                         }
                     }
                 }
