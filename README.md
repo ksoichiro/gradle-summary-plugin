@@ -1,10 +1,12 @@
 # gradle-summary-plugin
 
+[![Build Status](https://img.shields.io/travis/ksoichiro/gradle-summary-plugin/master.svg?style=flat-square)](https://travis-ci.org/ksoichiro/gradle-summary-plugin)
+
 > Gradle plugin to generate summary report from various kind of checks.
 
 ## Related plugins
 
-- gradle-console-reporter
+- [gradle-console-reporter](https://github.com/ksoichiro/gradle-console-reporter)
 
 ## License
 
