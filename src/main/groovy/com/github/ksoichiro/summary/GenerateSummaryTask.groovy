@@ -1,5 +1,8 @@
 package com.github.ksoichiro.summary
 
+import groovy.text.Template
+import groovy.text.markup.MarkupTemplateEngine
+import groovy.text.markup.TemplateConfiguration
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskAction
@@ -31,71 +34,35 @@ class GenerateSummaryTask extends DefaultTask {
     @TaskAction
     void exec() {
         createReportDir()
-        reportFile.text = """\
-            |<html>
-            |<head>
-            |<title>Summary</title>
-            |<style>
-            |body {
-            |  font-size: 14px;
-            |  font-family: "Helvetica Neue"
-            |}
-            |h3 {
-            |  font-size: 24px;
-            |}
-            |table {
-            |  border-collapse: collapse;
-            |}
-            |td,th {
-            |  border: 1px solid #ddd;
-            |  padding: 4px;
-            |}
-            |th {
-            |  font-weight: bold;
-            |  border-bottom-width: 2px;
-            |}
-            |.right {
-            |  text-align: right;
-            |}
-            |.bad {
-            |  color: #d9534f;
-            |}
-            |.warn {
-            |  color: #f0ad4e;
-            |}
-            |.fine {
-            |  color: #5cb85c;
-            |}
-            |</style>
-            |</head>
-            |<body>
-            |<h3>Summary</h3>
-            |<table>
-            |<tr>
-            |  <th>Project</th>
-            |  <th>Coverage[%]</th>
-            |</tr>
-            |""".stripMargin().stripIndent()
+
+        def styleContent = getClass().getResourceAsStream("/templates/style.css").text
+        def summaryContent = []
         project.rootProject.allprojects.findAll { it.plugins.hasPlugin('jacoco') }.each { Project p ->
             p.tasks.flatten().findAll { it.class.simpleName.startsWith 'JacocoReport' }.each {
                 File xml = it.reports.xml.destination
                 def cov = coverage(xml)
-                def classes = covClasses(cov)
-                def htmlReportFile = p.file("${it.reports.html.destination}/index.html")
-                reportFile.text += """\
-                    |<tr>
-                    |  <td>${p.name}</td>
-                    |  <td class="right"><a href="file://${htmlReportFile.canonicalPath}" class="${classes}">${sprintf('%3.2f', cov.round(2))}</a></td>
-                    |</tr>
-                    |""".stripMargin().stripIndent()
+                summaryContent += new Summary(
+                    name: p.name,
+                    cssClasses: covClasses(cov),
+                    coverage: cov,
+                    htmlReportFile: p.file("${it.reports.html.destination}/index.html"),
+                )
             }
         }
-        reportFile.text += """\
-            |</table>
-            |</div>
-            |</body>
-            |</html>
-            |""".stripMargin().stripIndent()
+        def templateMap = [
+            styleContent: styleContent,
+            summaryContent: summaryContent,
+        ]
+
+        TemplateConfiguration config = new TemplateConfiguration()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(config)
+        Template template = engine.createTemplate(getClass().getResourceAsStream("/templates/index.tpl").text)
+
+        Writer writer = new StringWriter()
+        Writable output = template.make(templateMap)
+        output.writeTo(writer)
+        reportFile.text = writer.toString()
+
         println "Summary:"
         println "${reportFile.canonicalPath}"
     }

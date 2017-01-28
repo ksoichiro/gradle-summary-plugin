@@ -1,0 +1,30 @@
+body {
+  font-size: 14px;
+  font-family: "Helvetica Neue"
+}
+h3 {
+  font-size: 24px;
+}
+table {
+  border-collapse: collapse;
+}
+td,th {
+  border: 1px solid #ddd;
+  padding: 4px;
+}
+th {
+  font-weight: bold;
+  border-bottom-width: 2px;
+}
+.right {
+  text-align: right;
+}
+.bad {
+  color: #d9534f;
+}
+.warn {
+  color: #f0ad4e;
+}
+.fine {
+  color: #5cb85c;
+}
