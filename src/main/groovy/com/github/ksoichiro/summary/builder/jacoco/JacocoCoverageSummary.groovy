@@ -1,4 +1,6 @@
-package com.github.ksoichiro.summary
+package com.github.ksoichiro.summary.builder.jacoco
+
+import com.github.ksoichiro.summary.Summary
 
 class JacocoCoverageSummary extends Summary {
     File htmlReportFile

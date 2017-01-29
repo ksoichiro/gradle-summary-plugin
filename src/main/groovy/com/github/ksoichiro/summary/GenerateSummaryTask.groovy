@@ -1,5 +1,6 @@
 package com.github.ksoichiro.summary
 
+import com.github.ksoichiro.summary.builder.SummaryItemBuilder
 import groovy.text.Template
 import groovy.text.markup.MarkupTemplateEngine
 import groovy.text.markup.TemplateConfiguration

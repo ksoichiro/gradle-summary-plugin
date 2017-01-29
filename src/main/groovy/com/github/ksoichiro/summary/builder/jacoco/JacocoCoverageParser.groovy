@@ -1,4 +1,4 @@
-package com.github.ksoichiro.summary
+package com.github.ksoichiro.summary.builder.jacoco
 
 class JacocoCoverageParser {
     float parse(File file) {

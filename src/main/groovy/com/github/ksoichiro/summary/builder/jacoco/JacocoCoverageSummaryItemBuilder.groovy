@@ -1,5 +1,8 @@
-package com.github.ksoichiro.summary
+package com.github.ksoichiro.summary.builder.jacoco
 
+import com.github.ksoichiro.summary.CoverageReportClassConverter
+import com.github.ksoichiro.summary.Summary
+import com.github.ksoichiro.summary.builder.SummaryItemBuilder
 import org.gradle.api.Project
 
 class JacocoCoverageSummaryItemBuilder extends SummaryItemBuilder {

@@ -1,5 +1,6 @@
-package com.github.ksoichiro.summary
+package com.github.ksoichiro.summary.builder
 
+import com.github.ksoichiro.summary.Summary
 import org.gradle.api.Project
 
 abstract class SummaryItemBuilder {
