@@ -6,7 +6,8 @@ jdk:
 
 script:
   - ./gradlew clean build check uploadArchives -s
-  - cd samples/jacoco-multi; ./gradlew clean check -s; cd ..
+  - cd samples/cobertura; ./gradlew clean check -s; cd ..
+  - cd samples/jacoco; ./gradlew clean check -s; cd ..
 
 after_success:
   - ./gradlew cobertura coveralls -s
