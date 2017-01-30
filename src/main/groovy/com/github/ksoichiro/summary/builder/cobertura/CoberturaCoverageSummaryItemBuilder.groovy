@@ -48,7 +48,7 @@ class CoberturaCoverageSummaryItemBuilder extends SummaryItemBuilder {
                     title: 'Coverage[%]',
                     cssClasses: coverageReportClassConverter.convert(cov),
                     coverage: cov,
-                    htmlReportFile: p.file("${coberturaExtension.coverageReportDir}/index.xml"),
+                    htmlReportFile: p.file("${coberturaExtension.coverageReportDir}/index.html"),
                 )
             }
         }
