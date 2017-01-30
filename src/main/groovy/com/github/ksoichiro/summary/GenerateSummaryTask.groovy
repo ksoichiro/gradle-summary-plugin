@@ -5,15 +5,25 @@ import groovy.text.Template
 import groovy.text.markup.MarkupTemplateEngine
 import groovy.text.markup.TemplateConfiguration
 import org.gradle.api.DefaultTask
+import org.gradle.api.internal.plugins.DslObject
+import org.gradle.api.reporting.Reporting
+import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.TaskAction
+import org.gradle.internal.reflect.Instantiator
 
-class GenerateSummaryTask extends DefaultTask {
+import javax.inject.Inject
+
+class GenerateSummaryTask extends DefaultTask implements Reporting<SummaryReports> {
     static final NAME = 'generateSummary'
     SummaryExtension extension
     List<SummaryItemBuilder> summaryItemBuilders
-    File reportFile
+
+    @Nested
+    final SummaryReportsImpl reports = (SummaryReportsImpl) getInstantiator().newInstance(SummaryReportsImpl, this)
 
     GenerateSummaryTask() {
+        group = 'reporting'
+        reports.html.enabled = true
         project.afterEvaluate {
             if (!rootProjectHasCheckTask()) {
                 defineCheckTaskForRootProject()
@@ -24,14 +34,38 @@ class GenerateSummaryTask extends DefaultTask {
             extension = project.extensions."${SummaryExtension.NAME}"
             summaryItemBuilders = extension.builders.collect { it.newInstance(project) }
             dependsOn summaryItemBuilders.collect { it.dependsOn() }?.findAll { it != null }?.flatten()
-            reportFile = extension.destination ?: project.file("${project.buildDir}/reports/summary/index.html")
+            (new DslObject(reports.html)).conventionMapping.with {
+                enabled = true
+                destination = {
+                    extension.destination ?: project.file("${project.buildDir}/reports/summary/index.html")
+                }
+            }
             inputs.files summaryItemBuilders.collect { it.getInputFiles() }?.findAll { it != null }?.flatten()
-            outputs.file reportFile
         }
+    }
+
+    @Inject
+    protected Instantiator getInstantiator() {
+        throw new UnsupportedOperationException()
+    }
+
+    @Override
+    SummaryReports getReports() {
+        reports
+    }
+
+    @Override
+    SummaryReports reports(Closure closure) {
+        reports.configure closure
     }
 
     @TaskAction
     void exec() {
+        if (!reports.html.isEnabled()) {
+            didWork = false
+            return
+        }
+
         createReportDir()
 
         def styleContent = getClass().getResourceAsStream("/templates/style.css").text
@@ -52,14 +86,14 @@ class GenerateSummaryTask extends DefaultTask {
         Writer writer = new StringWriter()
         Writable output = template.make(templateMap)
         output.writeTo(writer)
-        reportFile.text = writer.toString()
+        reports.html.destination.text = writer.toString()
 
         println "Summary:"
-        println "${reportFile.canonicalPath}"
+        println "${reports.html.destination.canonicalPath}"
     }
 
     def createReportDir() {
-        def reportDir = reportFile.parentFile
+        def reportDir = reports.html.destination.parentFile
         if (!reportDir.exists()) {
             project.mkdir(reportDir)
         }
@@ -86,8 +120,8 @@ class GenerateSummaryTask extends DefaultTask {
     def defineCleanTaskForRootProject() {
         project.rootProject.tasks.create('clean') {
             doLast {
-                if (reportFile?.exists()) {
-                    project.rootProject.delete(reportFile)
+                if (reports.html.destination?.exists()) {
+                    project.rootProject.delete(reports.html.destination)
                 }
             }
         }
