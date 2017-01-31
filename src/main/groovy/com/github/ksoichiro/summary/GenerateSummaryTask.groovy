@@ -4,6 +4,7 @@ import com.github.ksoichiro.summary.builder.SummaryItemBuilder
 import groovy.text.Template
 import groovy.text.markup.MarkupTemplateEngine
 import groovy.text.markup.TemplateConfiguration
+import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.internal.plugins.DslObject
 import org.gradle.api.reporting.Reporting
@@ -57,6 +58,11 @@ class GenerateSummaryTask extends DefaultTask implements Reporting<SummaryReport
     @Override
     SummaryReports reports(Closure closure) {
         reports.configure closure
+    }
+
+    SummaryReports reports(Action<? super SummaryReports> action) {
+        action.execute reports
+        reports
     }
 
     @TaskAction
