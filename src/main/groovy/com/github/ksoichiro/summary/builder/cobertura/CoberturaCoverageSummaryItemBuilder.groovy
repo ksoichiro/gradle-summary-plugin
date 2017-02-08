@@ -18,8 +18,7 @@ class CoberturaCoverageSummaryItemBuilder extends SummaryItemBuilder {
     @Override
     List<File> getInputFiles() {
         def reports = []
-        //project.file("${project.buildDir}/reports/cobertura/coverage.xml")
-        project.rootProject.allprojects.findAll { it.plugins.hasPlugin('net.saliman.cobertura') }.each {
+        coberturaProjects().each {
             // Enable XML report carefully and silently
             def coberturaExtension = it.extensions.findByName('cobertura')
             if (coberturaExtension) {
@@ -27,7 +26,7 @@ class CoberturaCoverageSummaryItemBuilder extends SummaryItemBuilder {
                 if (formats && !formats.contains('xml')) {
                     coberturaExtension.coverageFormats += 'xml'
                 }
-                reports += it.file("${coberturaExtension.coverageReportDir}/coverage.xml")
+                reports += coverageReportFile(it, coberturaExtension)
             }
         }
         reports
@@ -38,10 +37,10 @@ class CoberturaCoverageSummaryItemBuilder extends SummaryItemBuilder {
         def summaryContent = []
         def coberturaCoverageParser = new CoberturaCoverageParser()
         def coverageReportClassConverter = new CoverageReportClassConverter()
-        project.rootProject.allprojects.findAll { it.plugins.hasPlugin('net.saliman.cobertura') }.each { Project p ->
+        coberturaProjects().each { Project p ->
             def coberturaExtension = p.extensions.findByName('cobertura')
             if (coberturaExtension) {
-                File xml = p.file("${coberturaExtension.coverageReportDir}/coverage.xml")
+                File xml = coverageReportFile(p, coberturaExtension)
                 def cov = coberturaCoverageParser.parse(xml)
                 summaryContent += new CoberturaCoverageSummary(
                     name: p.name,
@@ -53,5 +52,13 @@ class CoberturaCoverageSummaryItemBuilder extends SummaryItemBuilder {
             }
         }
         summaryContent
+    }
+
+    def coberturaProjects() {
+        project.rootProject.allprojects.findAll { it.plugins.hasPlugin('net.saliman.cobertura') }
+    }
+
+    static File coverageReportFile(it, coberturaExtension) {
+        it.file("${coberturaExtension.coverageReportDir}/coverage.xml")
     }
 }

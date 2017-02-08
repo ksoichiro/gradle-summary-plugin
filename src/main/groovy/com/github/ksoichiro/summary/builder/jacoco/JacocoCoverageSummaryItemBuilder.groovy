@@ -12,19 +12,17 @@ class JacocoCoverageSummaryItemBuilder extends SummaryItemBuilder {
 
     @Override
     Object[] dependsOn() {
-        project.rootProject.allprojects.tasks.flatten().findAll { it.class.simpleName.startsWith 'JacocoReport' }
+        jacocoReportTasks(project.rootProject.allprojects)
     }
 
     @Override
     List<File> getInputFiles() {
         def reports = []
-        project.rootProject.allprojects.findAll { it.plugins.hasPlugin('jacoco') }.each {
-            it.tasks.flatten().findAll { it.class.simpleName.startsWith 'JacocoReport' }.each {
-                if (!it.reports.xml.enabled) {
-                    it.reports.xml.enabled = true
-                }
-                reports += it.reports.xml.destination
+        jacocoReportTasks(jacocoProjects()).each {
+            if (!it.reports.xml.enabled) {
+                it.reports.xml.enabled = true
             }
+            reports += it.reports.xml.destination
         }
         reports
     }
@@ -34,19 +32,25 @@ class JacocoCoverageSummaryItemBuilder extends SummaryItemBuilder {
         def summaryContent = []
         def jacocoCoverageParser = new JacocoCoverageParser()
         def coverageReportClassConverter = new CoverageReportClassConverter()
-        project.rootProject.allprojects.findAll { it.plugins.hasPlugin('jacoco') }.each { Project p ->
-            p.tasks.flatten().findAll { it.class.simpleName.startsWith 'JacocoReport' }.each {
-                File xml = it.reports.xml.destination
-                def cov = jacocoCoverageParser.parse(xml)
-                summaryContent += new JacocoCoverageSummary(
-                    name: p.name,
-                    title: 'Coverage[%]',
-                    cssClasses: coverageReportClassConverter.convert(cov),
-                    coverage: cov,
-                    htmlReportFile: p.file("${it.reports.html.destination}/index.html"),
-                )
-            }
+        jacocoReportTasks(jacocoProjects()).each {
+            File xml = it.reports.xml.destination
+            def cov = jacocoCoverageParser.parse(xml)
+            summaryContent += new JacocoCoverageSummary(
+                name: it.project.name,
+                title: 'Coverage[%]',
+                cssClasses: coverageReportClassConverter.convert(cov),
+                coverage: cov,
+                htmlReportFile: it.project.file("${it.reports.html.destination}/index.html"),
+            )
         }
         summaryContent
+    }
+
+    def jacocoProjects() {
+        project.rootProject.allprojects.findAll { it.plugins.hasPlugin('jacoco') }
+    }
+
+    static jacocoReportTasks(p) {
+        p.tasks.flatten().findAll { it.class.simpleName.startsWith 'JacocoReport' }
     }
 }
