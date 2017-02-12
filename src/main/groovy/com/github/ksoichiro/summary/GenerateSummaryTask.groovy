@@ -29,9 +29,7 @@ class GenerateSummaryTask extends DefaultTask implements Reporting<SummaryReport
             if (!rootProjectHasCheckTask()) {
                 defineCheckTaskForRootProject()
             }
-            if (!rootProjectHasCleanTask()) {
-                defineCleanTaskForRootProject()
-            }
+            setTaskGraph()
             extension = project.extensions."${SummaryExtension.NAME}"
             summaryItemBuilders = extension.builders.collect { it.newInstance(project) }
             dependsOn summaryItemBuilders.collect { it.dependsOn() }?.findAll { it != null }?.flatten()
@@ -111,25 +109,14 @@ class GenerateSummaryTask extends DefaultTask implements Reporting<SummaryReport
 
     def defineCheckTaskForRootProject() {
         project.tasks.create 'check'
+    }
+
+    def setTaskGraph() {
         project.gradle.projectsEvaluated {
             project.rootProject.subprojects.tasks.flatten().findAll { it.name.contains('check') }.each {
                 project.rootProject.tasks.check.mustRunAfter it
             }
         }
         project.rootProject.check.dependsOn NAME
-    }
-
-    def rootProjectHasCleanTask() {
-        project.rootProject.tasks.flatten().any { it.name == 'clean' }
-    }
-
-    def defineCleanTaskForRootProject() {
-        project.rootProject.tasks.create('clean') {
-            doLast {
-                if (reports.html.destination?.exists()) {
-                    project.rootProject.delete(reports.html.destination)
-                }
-            }
-        }
     }
 }
