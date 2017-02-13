@@ -35,13 +35,12 @@ class CoberturaCoverageSummaryItemBuilder extends SummaryItemBuilder {
     @Override
     List<Summary> build() {
         def summaryContent = []
-        def coberturaCoverageParser = new CoberturaCoverageParser()
         def coverageReportClassConverter = new CoverageReportClassConverter()
         coberturaProjects().each { Project p ->
             def coberturaExtension = p.extensions.findByName('cobertura')
             if (coberturaExtension) {
                 File xml = coverageReportFile(p, coberturaExtension)
-                def cov = coberturaCoverageParser.parse(xml)
+                def cov = CoberturaCoverageParser.parse(xml)
                 summaryContent += new CoberturaCoverageSummary(
                     name: p.name,
                     title: 'Coverage[%]',

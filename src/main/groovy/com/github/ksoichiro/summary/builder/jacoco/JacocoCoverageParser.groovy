@@ -1,7 +1,7 @@
 package com.github.ksoichiro.summary.builder.jacoco
 
 class JacocoCoverageParser {
-    float parse(File file) {
+    static float parse(File file) {
         def rootNode = new XmlParser(false, false).parseText(file.text.replaceAll("<!DOCTYPE[^>]*>", ""))
         def cov = 0.0f
         rootNode.counter.each { counter ->

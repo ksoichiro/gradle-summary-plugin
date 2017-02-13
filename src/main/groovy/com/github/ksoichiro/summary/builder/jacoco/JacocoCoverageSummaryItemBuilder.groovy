@@ -30,11 +30,10 @@ class JacocoCoverageSummaryItemBuilder extends SummaryItemBuilder {
     @Override
     List<Summary> build() {
         def summaryContent = []
-        def jacocoCoverageParser = new JacocoCoverageParser()
         def coverageReportClassConverter = new CoverageReportClassConverter()
         jacocoReportTasks(jacocoProjects()).each {
             File xml = it.reports.xml.destination
-            def cov = jacocoCoverageParser.parse(xml)
+            def cov = JacocoCoverageParser.parse(xml)
             summaryContent += new JacocoCoverageSummary(
                 name: it.project.name,
                 title: 'Coverage[%]',
