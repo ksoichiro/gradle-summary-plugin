@@ -5,9 +5,7 @@ jdk:
   - oraclejdk8
 
 script:
-  - ./gradlew clean build check uploadArchives -s
-  - cd samples/cobertura; ./gradlew clean check -s; cd ..
-  - cd samples/jacoco; ./gradlew clean check -s; cd ..
+  - ./gradlew clean build check -s
 
 after_success:
   - ./gradlew cobertura coveralls -s
