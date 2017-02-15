@@ -17,40 +17,32 @@ class CoberturaCoverageSummaryItemBuilder extends SummaryItemBuilder {
 
     @Override
     List<File> getInputFiles() {
-        def reports = []
-        coberturaProjects().each {
+        coberturaProjects().findAll { it.extensions.findByName('cobertura') != null }.collect {
             // Enable XML report carefully and silently
             def coberturaExtension = it.extensions.findByName('cobertura')
-            if (coberturaExtension) {
-                Set formats = coberturaExtension.coverageFormats
-                if (formats && !formats.contains('xml')) {
-                    coberturaExtension.coverageFormats += 'xml'
-                }
-                reports += coverageReportFile(it, coberturaExtension)
+            Set formats = coberturaExtension.coverageFormats
+            if (formats && !formats.contains('xml')) {
+                coberturaExtension.coverageFormats += 'xml'
             }
+            coverageReportFile(it, coberturaExtension)
         }
-        reports
     }
 
     @Override
     List<Summary> build() {
-        def summaryContent = []
         def coverageReportClassConverter = new CoverageReportClassConverter()
-        coberturaProjects().each { Project p ->
+        coberturaProjects().findAll { it.extensions.findByName('cobertura') != null }.collect { Project p ->
             def coberturaExtension = p.extensions.findByName('cobertura')
-            if (coberturaExtension) {
-                File xml = coverageReportFile(p, coberturaExtension)
-                def cov = CoberturaCoverageParser.parse(xml)
-                summaryContent += new CoberturaCoverageSummary(
-                    name: p.name,
-                    title: 'Coverage[%]',
-                    cssClasses: coverageReportClassConverter.convert(cov),
-                    coverage: cov,
-                    htmlReportFile: p.file("${coberturaExtension.coverageReportDir}/index.html"),
-                )
-            }
+            File xml = coverageReportFile(p, coberturaExtension)
+            def cov = CoberturaCoverageParser.parse(xml)
+            new CoberturaCoverageSummary(
+                name: p.name,
+                title: 'Coverage[%]',
+                cssClasses: coverageReportClassConverter.convert(cov),
+                coverage: cov,
+                htmlReportFile: p.file("${coberturaExtension.coverageReportDir}/index.html"),
+            )
         }
-        summaryContent
     }
 
     def coberturaProjects() {

@@ -20,10 +20,8 @@ class AllProjectsSummaryItemBuilder extends SummaryItemBuilder {
 
     @Override
     List<Summary> build() {
-        def summaryContent = []
-        project.rootProject.subprojects.each {
-            summaryContent += new Summary(name: it.name, title: 'Project', content: it.name)
+        project.rootProject.subprojects.collect {
+            new Summary(name: it.name, title: 'Project', content: it.name)
         }
-        summaryContent
     }
 }

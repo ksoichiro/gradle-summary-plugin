@@ -17,24 +17,21 @@ class JacocoCoverageSummaryItemBuilder extends SummaryItemBuilder {
 
     @Override
     List<File> getInputFiles() {
-        def reports = []
-        jacocoReportTasks(jacocoProjects()).each {
+        jacocoReportTasks(jacocoProjects()).collect {
             if (!it.reports.xml.enabled) {
                 it.reports.xml.enabled = true
             }
-            reports += it.reports.xml.destination
+            it.reports.xml.destination
         }
-        reports
     }
 
     @Override
     List<Summary> build() {
-        def summaryContent = []
         def coverageReportClassConverter = new CoverageReportClassConverter()
-        jacocoReportTasks(jacocoProjects()).each {
+        jacocoReportTasks(jacocoProjects()).collect {
             File xml = it.reports.xml.destination
             def cov = JacocoCoverageParser.parse(xml)
-            summaryContent += new JacocoCoverageSummary(
+            new JacocoCoverageSummary(
                 name: it.project.name,
                 title: 'Coverage[%]',
                 cssClasses: coverageReportClassConverter.convert(cov),
@@ -42,7 +39,6 @@ class JacocoCoverageSummaryItemBuilder extends SummaryItemBuilder {
                 htmlReportFile: it.project.file("${it.reports.html.destination}/index.html"),
             )
         }
-        summaryContent
     }
 
     def jacocoProjects() {
